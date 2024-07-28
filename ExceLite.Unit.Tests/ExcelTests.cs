@@ -1,3 +1,4 @@
+using ExceLite.Exceptions;
 using ExceLite.Unit.Tests.ExcelFiles;
 using FluentAssertions;
 
@@ -10,7 +11,7 @@ public class ExcelTests
     {
         //Arrange
         string excelFilePath = FilePaths.EmptyExcel;
-        var stream = FilePaths.OpenReadStream(excelFilePath);
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
         var data = Excel.ReadFromExcel<TestClass>(stream);
@@ -24,7 +25,7 @@ public class ExcelTests
     {
         //Arrange
         string excelFilePath = FilePaths.OnlyHeaderExcel;
-        var stream = FilePaths.OpenReadStream(excelFilePath);
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
         var data = Excel.ReadFromExcel<TestClass>(stream);
@@ -39,7 +40,7 @@ public class ExcelTests
     {
         //Arrange
         string excelFilePath = FilePaths.OneLineDataExcel;
-        var stream = FilePaths.OpenReadStream(excelFilePath);
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
         var expectedResult = new TestClass[]
         {
             new()
@@ -49,7 +50,8 @@ public class ExcelTests
                 BoolTest = true,
                 FloatTest = 1.1234f,
                 DateTimeTest = new DateTime(2024, 2, 16, 14, 55, 45, DateTimeKind.Utc),
-                DoubleTest = 3385667.12345678912345
+                DoubleTest = 3385667.12345678912345,
+                CustomStringTest = "Duis aute irure dolor in reprehenderit in voluptate velit."
             }
         };
 
@@ -65,7 +67,7 @@ public class ExcelTests
     {
         //Arrange
         string excelFilePath = FilePaths.MultiLineDateExcel;
-        var stream = FilePaths.OpenReadStream(excelFilePath);
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
         var expectedResult = new TestClass[]
         {
             new()
@@ -75,7 +77,8 @@ public class ExcelTests
                 BoolTest = false,
                 FloatTest = 0.12345f,
                 DateTimeTest = new DateTime(1999, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                DoubleTest = -16.99998
+                DoubleTest = -16.99998,
+                CustomStringTest = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
             },
             new()
             {
@@ -84,7 +87,8 @@ public class ExcelTests
                 BoolTest = true,
                 FloatTest = -5555.123f,
                 DateTimeTest = new DateTime(2300, 5, 2, 2, 10, 59, DateTimeKind.Utc),
-                DoubleTest = 1000
+                DoubleTest = 1000,
+                CustomStringTest = "Sed do eiusmod tempor incididunt ut labore et dolore."
             },
             new()
             {
@@ -93,7 +97,8 @@ public class ExcelTests
                 BoolTest = false,
                 FloatTest = 987,
                 DateTimeTest = new DateTime(2024, 6, 12, 0, 0, 0, DateTimeKind.Utc),
-                DoubleTest = 99999.999
+                DoubleTest = 99999.999,
+                CustomStringTest = "Ut enim ad minim veniam, quis nostrud exercitation."
             }
         };
 
@@ -104,8 +109,66 @@ public class ExcelTests
         data.Should().BeEquivalentTo(expectedResult);
     }
 
+    [Fact]
+    public void ReadFromExcel_NoValidPropertyInClass_ThrowsNoValidPropertyException()
+    {
+        //Arrange
+        string excelFilePath = FilePaths.EmptyExcel;
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
+
+        //Act
+        var act = () => Excel.ReadFromExcel<NoValidPropertyClass>(stream).ToArray();
+
+        //Assert
+        act.Should().Throw<NoValidPropertyException>();
+    }
+
+    [Fact]
+    public void ReadFromExcel_SheetDoesNotExist_ThrowsSheetNotFoundException()
+    {
+        //Arrange
+        string excelFilePath = FilePaths.EmptyExcel;
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
+
+        //Act
+        var act = () => Excel.ReadFromExcel<TestClass>(stream, "NotExist").ToArray();
+
+        //Assert
+        act.Should().Throw<SheetNotFoundException>();
+    }
+
+    [Fact]
+    public void ReadFromExcel_HasOneSheet_FindsSheetByName()
+    {
+        //Arrange
+        string excelFilePath = FilePaths.OneLineDataExcel;
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
+
+        //Act
+        var act = () => Excel.ReadFromExcel<TestClass>(stream, "Sheet1").ToArray();
+
+        //Assert
+        act.Should().NotThrow<SheetNotFoundException>();
+    }
+
+    [Fact]
+    public void ReadFromExcel_HasMultipleSheets_FindsSheetByName()
+    {
+        //Arrange
+        string excelFilePath = FilePaths.MultiSheetExcel;
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
+
+        //Act
+        var act = () => Excel.ReadFromExcel<TestClass>(stream, "Custom Name").ToArray();
+
+        //Assert
+        act.Should().NotThrow<SheetNotFoundException>();
+    }
+
     private class TestClass
     {
+        public int EmptyTest { get; set; }
+
         public string? StringTest { get; set; }
 
         public int IntTest { get; set; }
@@ -117,5 +180,19 @@ public class ExcelTests
         public double DoubleTest { get; set; }
 
         public DateTime DateTimeTest { get; set; }
+
+        [ExcelColumn("Custom string property name")]
+        public string? CustomStringTest { get; set; }
+    }
+
+    private class NoValidPropertyClass
+    {
+        private int PrivateProperty { get; set; }
+
+        protected int ProtectedProperty { get; set; }
+
+        internal int InternalProperty { get; set; }
+
+        public static string? StaticProperty { get; set; }
     }
 }

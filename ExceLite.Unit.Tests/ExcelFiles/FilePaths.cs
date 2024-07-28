@@ -5,6 +5,7 @@ internal static class FilePaths
     public static string OnlyHeaderExcel => GetRelativeTestFilePath("OnlyHeader.xlsx");
     public static string OneLineDataExcel => GetRelativeTestFilePath("OneLineData.xlsx");
     public static string MultiLineDateExcel => GetRelativeTestFilePath("MultiLineDate.xlsx");
+    public static string MultiSheetExcel => GetRelativeTestFilePath("MultiSheet.xlsx");
 
     public static Stream OpenReadStream(string fileName)
     {
