@@ -14,7 +14,7 @@ public class ExcelTests
         using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
-        var data = Excel.ReadFromExcel<TestClass>(stream);
+        var data = Excel.ReadFromExcel<HeaderTestClass>(stream);
 
         //Assert
         data.Should().BeEmpty();
@@ -28,7 +28,7 @@ public class ExcelTests
         using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
-        var data = Excel.ReadFromExcel<TestClass>(stream);
+        var data = Excel.ReadFromExcel<HeaderTestClass>(stream);
 
         //Assert
         data.Should().BeEmpty();
@@ -41,7 +41,7 @@ public class ExcelTests
         //Arrange
         string excelFilePath = FilePaths.OneLineDataExcel;
         using var stream = FilePaths.OpenReadStream(excelFilePath);
-        var expectedResult = new TestClass[]
+        var expectedResult = new HeaderTestClass[]
         {
             new()
             {
@@ -56,7 +56,7 @@ public class ExcelTests
         };
 
         //Act
-        var data = Excel.ReadFromExcel<TestClass>(stream).ToArray();
+        var data = Excel.ReadFromExcel<HeaderTestClass>(stream).ToArray();
 
         //Assert
         data.Should().BeEquivalentTo(expectedResult);
@@ -68,7 +68,7 @@ public class ExcelTests
         //Arrange
         string excelFilePath = FilePaths.MultiLineDateExcel;
         using var stream = FilePaths.OpenReadStream(excelFilePath);
-        var expectedResult = new TestClass[]
+        var expectedResult = new HeaderTestClass[]
         {
             new()
             {
@@ -103,7 +103,7 @@ public class ExcelTests
         };
 
         //Act
-        var data = Excel.ReadFromExcel<TestClass>(stream).ToArray();
+        var data = Excel.ReadFromExcel<HeaderTestClass>(stream).ToArray();
 
         //Assert
         data.Should().BeEquivalentTo(expectedResult);
@@ -131,7 +131,7 @@ public class ExcelTests
         using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
-        var act = () => Excel.ReadFromExcel<TestClass>(stream, "NotExist").ToArray();
+        var act = () => Excel.ReadFromExcel<HeaderTestClass>(stream, "NotExist").ToArray();
 
         //Assert
         act.Should().Throw<SheetNotFoundException>();
@@ -145,7 +145,7 @@ public class ExcelTests
         using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
-        var act = () => Excel.ReadFromExcel<TestClass>(stream, "Sheet1").ToArray();
+        var act = () => Excel.ReadFromExcel<HeaderTestClass>(stream, "Sheet1").ToArray();
 
         //Assert
         act.Should().NotThrow<SheetNotFoundException>();
@@ -159,13 +159,36 @@ public class ExcelTests
         using var stream = FilePaths.OpenReadStream(excelFilePath);
 
         //Act
-        var act = () => Excel.ReadFromExcel<TestClass>(stream, "Custom Name").ToArray();
+        var act = () => Excel.ReadFromExcel<HeaderTestClass>(stream, "Custom Name").ToArray();
 
         //Assert
         act.Should().NotThrow<SheetNotFoundException>();
     }
 
-    private class TestClass
+    [Fact]
+    public void ReadFromExcel_HasNoHeader_ReadsData()
+    {
+        //Arrange
+        string excelFilePath = FilePaths.NoHeaderExcel;
+        using var stream = FilePaths.OpenReadStream(excelFilePath);
+        var expectedResult = new NoHeaderTestClass[]
+        {
+            new()
+            {
+                StringTest = "Hello world",
+                DoubleTest = 123.987,
+                DateTimeTest = new DateTime(1982, 7, 30, 22, 12, 2, DateTimeKind.Utc)
+            }
+        };
+
+        //Act
+        var data = Excel.ReadFromExcel<NoHeaderTestClass>(stream, hasHeader: false).ToArray();
+
+        //Assert
+        data.Should().BeEquivalentTo(expectedResult);
+    }
+
+    private class HeaderTestClass
     {
         public int EmptyTest { get; set; }
 
@@ -183,6 +206,18 @@ public class ExcelTests
 
         [ExcelColumn("Custom string property name")]
         public string? CustomStringTest { get; set; }
+    }
+
+    private class NoHeaderTestClass
+    {
+        [ExcelColumn(columnReference: "C")]
+        public DateTime DateTimeTest { get; set; }
+
+        [ExcelColumn(columnReference: "B")]
+        public string? StringTest { get; set; }
+
+        [ExcelColumn(columnReference: "A")]
+        public double DoubleTest { get; set; }
     }
 
     private class NoValidPropertyClass
