@@ -6,10 +6,12 @@ namespace ExceLite
     public class ExcelColumnAttribute : Attribute
     {
         public string ColumnName { get; }
+        public string ColumnReference { get; }
 
-        public ExcelColumnAttribute(string columnName)
+        public ExcelColumnAttribute(string columnName = null, string columnReference = null)
         {
             ColumnName = columnName;
+            ColumnReference = columnReference;
         }
     }
 }
