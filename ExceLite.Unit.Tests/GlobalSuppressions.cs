@@ -5,7 +5,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelTests.NoValidPropertyClass.PrivateProperty")]
-[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelTests.NoValidPropertyClass.ProtectedProperty")]
-[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelTests.NoValidPropertyClass.InternalProperty")]
-[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelTests.NoValidPropertyClass.StaticProperty")]
+[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelReadTests.NoValidPropertyClass.PrivateProperty")]
+[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelReadTests.NoValidPropertyClass.ProtectedProperty")]
+[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelReadTests.NoValidPropertyClass.InternalProperty")]
+[assembly: SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>", Scope = "member", Target = "~P:ExceLite.Unit.Tests.ExcelReadTests.NoValidPropertyClass.StaticProperty")]

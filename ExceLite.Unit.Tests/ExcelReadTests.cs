@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace ExceLite.Unit.Tests;
 
-public class ExcelTests
+public class ExcelReadTests
 {
     [Fact]
     public void ReadFromExcel_ReadsEmptyExcel_ReturnsEmptyIEnumerable()
