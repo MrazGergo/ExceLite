@@ -1,4 +1,6 @@
-﻿namespace ExceLite.Unit.Tests.ExcelFiles;
+﻿using System.Text.RegularExpressions;
+
+namespace ExceLite.Unit.Tests.ExcelFiles;
 internal static class FilePaths
 {
     public static string EmptyExcel => GetRelativeTestFilePath("Empty.xlsx");
@@ -11,6 +13,21 @@ internal static class FilePaths
     public static Stream OpenReadStream(string fileName)
     {
         return File.OpenRead(fileName);
+    }
+
+    public static Stream OpenReadWriteStream(string fileName)
+    {
+        return File.Open(fileName, FileMode.OpenOrCreate);
+    }
+
+    public static string RandomFilePath
+    {
+        get
+        {
+            var randomName = Path.GetRandomFileName();
+            randomName = Regex.Replace(randomName, ".[a-z]+$", ".xlsx");
+            return Path.Combine(Path.GetTempPath(), randomName);
+        }
     }
 
     private static string GetRelativeTestFilePath(string fileName)
