@@ -41,19 +41,9 @@ namespace ExceLite
                 var propertiesByColumnReference = GetPropertyReferences(properties);
                 var currentRow = 1;
 
-                // Add header row if specified
                 if (addHeader)
                 {
-                    var headerRow = new Row();
-                    foreach (var property in properties)
-                    {
-                        var columnName = property.GetCustomAttribute<ExcelColumnAttribute>()?.ColumnName ?? property.Name;
-                        var columnReference = propertiesByColumnReference[property];
-                        var cell = CreateCell(columnName, columnReference, currentRow);
-
-                        headerRow.Append(cell);
-                    }
-
+                    var headerRow = CreateRow(properties, item: null, isHeader: true, propertiesByColumnReference, currentRow);
                     currentRow++;
                     sheetData.Append(headerRow);
                 }
@@ -61,22 +51,42 @@ namespace ExceLite
                 // Add data rows
                 foreach (var item in data)
                 {
-                    var dataRow = new Row();
-                    foreach (var property in properties)
-                    {
-                        var value = property.GetValue(item);
-                        var columnReference = propertiesByColumnReference[property];
-                        var cell = CreateCell(value, columnReference, currentRow);
-
-                        dataRow.Append(cell);
-                    }
-
+                    var dataRow = CreateRow(properties, item, isHeader: false, propertiesByColumnReference, currentRow);
                     currentRow++;
                     sheetData.Append(dataRow);
                 }
 
                 workbookPart.Workbook.Save();
             }
+        }
+
+        /// <summary>
+        /// Creates a Row object for the Excel sheet, either as a header row or a data row.
+        /// </summary>
+        /// <param name="properties">The properties of the objects being written to the Excel sheet.</param>
+        /// <param name="item">The data item to extract values from (null for header row).</param>
+        /// <param name="isHeader">Indicates if the row is a header row.</param>
+        /// <param name="propertiesByColumnReference">The mapping of properties to column references.</param>
+        /// <param name="currentRow">The current row index.</param>
+        /// <returns>A Row object ready to be appended to the Excel sheet.</returns>
+        private static Row CreateRow(PropertyInfo[] properties, object item, bool isHeader,
+            Dictionary<PropertyInfo, string> propertiesByColumnReference, int currentRow)
+        {
+            var row = new Row();
+
+            foreach (var property in properties)
+            {
+                var value = isHeader
+                    ? property.GetCustomAttribute<ExcelColumnAttribute>()?.ColumnName ?? property.Name
+                    : property.GetValue(item);
+
+                var columnReference = propertiesByColumnReference[property];
+                var cell = CreateCell(value, columnReference, currentRow);
+
+                row.Append(cell);
+            }
+
+            return row;
         }
 
         private static string CreateReference(string columnReference, int row) => $"{columnReference}{row}";
