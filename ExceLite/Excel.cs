@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using ExceLite.Exceptions;
 using System;
@@ -13,6 +14,152 @@ namespace ExceLite
 {
     public static class Excel
     {
+        public static void WriteToExcel<T>(Stream stream, IEnumerable<T> data, string sheetName = "Sheet1", bool addHeader = true)
+        {
+            using (var spreadsheetDocument = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook))
+            {
+                var workbookPart = spreadsheetDocument.AddWorkbookPart();
+                workbookPart.Workbook = new Workbook();
+                var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                worksheetPart.Worksheet = new Worksheet(new SheetData());
+
+                // Add a sheet to the workbook
+                var sheets = spreadsheetDocument.WorkbookPart.Workbook.AppendChild(new Sheets());
+                var sheet = new Sheet()
+                {
+                    Id = spreadsheetDocument.WorkbookPart.GetIdOfPart(worksheetPart),
+                    SheetId = 1,
+                    Name = sheetName
+                };
+                sheets.Append(sheet);
+
+                // Get the sheet data
+                var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
+
+                // Get properties and column mapping
+                var properties = GetValidProperties<T>();
+                var propertiesByColumnReference = GetPropertyReferences(properties);
+                var currentRow = 1;
+
+                // Add header row if specified
+                if (addHeader)
+                {
+                    var headerRow = new Row();
+                    foreach (var property in properties)
+                    {
+                        var columnName = property.GetCustomAttribute<ExcelColumnAttribute>()?.ColumnName ?? property.Name;
+                        var columnReference = propertiesByColumnReference[property];
+                        var cell = CreateCell(columnName, columnReference, currentRow);
+
+                        headerRow.Append(cell);
+                    }
+
+                    currentRow++;
+                    sheetData.Append(headerRow);
+                }
+
+                // Add data rows
+                foreach (var item in data)
+                {
+                    var dataRow = new Row();
+                    foreach (var property in properties)
+                    {
+                        var value = property.GetValue(item);
+                        var columnReference = propertiesByColumnReference[property];
+                        var cell = CreateCell(value, columnReference, currentRow);
+
+                        dataRow.Append(cell);
+                    }
+
+                    currentRow++;
+                    sheetData.Append(dataRow);
+                }
+
+                workbookPart.Workbook.Save();
+            }
+        }
+
+        private static string CreateReference(string columnReference, int row) => $"{columnReference}{row}";
+
+        private static Dictionary<PropertyInfo, string> GetPropertyReferences(PropertyInfo[] properties)
+        {
+            var result = new Dictionary<PropertyInfo, string>();
+            //First, get the references where it is set.
+            foreach (var property in properties)
+            {
+                var columnReference = property.GetCustomAttribute<ExcelColumnAttribute>()?.ColumnReference;
+                if (!string.IsNullOrEmpty(columnReference))
+                {
+                    result.Add(property, columnReference);
+                }
+            }
+
+            if(result.Count == properties.Length)
+            {
+                return result;
+            }
+
+            //Set a random one for the others
+            var referenceGenerator = new ColumnReferenceGenerator();
+            foreach (var property in properties.Where(p => !result.ContainsKey(p)))
+            {
+                string reference;
+                do
+                {
+                    reference = referenceGenerator.Next;
+                }
+                while(result.ContainsValue(reference));
+
+                result.Add(property, reference);
+            }
+
+            return result;
+        }
+
+        private static Cell CreateCell(object value, string columnReference, int row)
+        {
+            var cell = new Cell();
+            cell.CellReference = CreateReference(columnReference, row);
+
+            if (value is null)
+            {
+                return cell;
+            }
+
+            if (value is bool b)
+            {
+                cell.DataType = CellValues.Boolean;
+                cell.CellValue = new CellValue(b);
+            }
+            else if (value is int i)
+            {
+                cell.DataType = CellValues.Number;
+                cell.CellValue = new CellValue(i);
+            }
+            else if (value is float f)
+            {
+                cell.DataType = CellValues.Number;
+                cell.CellValue = new CellValue(f);
+            }
+            else if (value is double d)
+            {
+                cell.DataType = CellValues.Number;
+                cell.CellValue = new CellValue(d);
+            }
+            else if (value is DateTime dt)
+            {
+                cell.DataType = CellValues.Date;
+                cell.CellValue = new CellValue(dt);
+            }
+            else
+            {
+                cell.DataType = CellValues.String;
+                cell.CellValue = new CellValue(value.ToString());
+            }
+
+            return cell;
+        }
+
         /// <summary>
         /// Reads data from an Excel file and maps it to a collection of objects of type T.
         /// </summary>
@@ -63,9 +210,10 @@ namespace ExceLite
                         {
                             var cellValue = GetCellValue(spreadsheetDocument, cell);
                             object convertedValue;
-                            if (property.PropertyType == typeof(DateTime))
+                            if (property.PropertyType == typeof(DateTime) &&
+                                double.TryParse(cellValue, NumberStyles.Any, CultureInfo.InvariantCulture, out var doubleValue))
                             {
-                                convertedValue = DateTime.FromOADate(Convert.ToDouble(cellValue, CultureInfo.InvariantCulture));
+                                convertedValue = DateTime.FromOADate(doubleValue);
                             }
                             else
                             {
@@ -145,7 +293,6 @@ namespace ExceLite
 
             return propertiesByColumnReference;
         }
-
 
         /// <summary>
         /// Extracts the column reference (letters) from the given cell reference (e.g., "A1", "B2").
