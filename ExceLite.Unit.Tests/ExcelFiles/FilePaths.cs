@@ -17,6 +17,12 @@ internal static class FilePaths
 
     public static Stream OpenReadWriteStream(string fileName)
     {
+        var folderPath = Path.GetDirectoryName(fileName)!;
+        if (!Directory.Exists(folderPath))
+        {
+            Directory.CreateDirectory(folderPath);
+        }
+
         return File.Open(fileName, FileMode.OpenOrCreate);
     }
 
@@ -24,9 +30,10 @@ internal static class FilePaths
     {
         get
         {
-            var randomName = Path.GetRandomFileName();
-            randomName = Regex.Replace(randomName, ".[a-z]+$", ".xlsx");
-            return Path.Combine(Path.GetTempPath(), randomName);
+            const string subFolderName = "ExceLite";
+            var randomName = Regex.Replace(Path.GetRandomFileName(), ".[a-z]+$", ".xlsx");
+
+            return Path.Combine(Path.GetTempPath(), subFolderName, randomName);
         }
     }
 

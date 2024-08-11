@@ -5,18 +5,18 @@ namespace ExceLite.Unit.Tests;
 
 public class ExcelWriteTests : IDisposable
 {
-    private readonly string excelFilePath;
+    private readonly string _excelFilePath;
 
     public ExcelWriteTests()
     {
-        excelFilePath = FilePaths.RandomFilePath;
+        _excelFilePath = FilePaths.RandomFilePath;
     }
 
     public void Dispose()
     {
-        if (File.Exists(excelFilePath))
+        if (File.Exists(_excelFilePath))
         {
-            File.Delete(excelFilePath);
+            File.Delete(_excelFilePath);
         }
     }
 
@@ -57,13 +57,13 @@ public class ExcelWriteTests : IDisposable
         };
 
         //Act
-        using (var stream = FilePaths.OpenReadWriteStream(excelFilePath))
+        using (var stream = FilePaths.OpenReadWriteStream(_excelFilePath))
         {
             Excel.WriteToExcel(stream, data, addHeader: hasHeader);
         }
 
         //Assert
-        using var readStream = FilePaths.OpenReadStream(excelFilePath);
+        using var readStream = FilePaths.OpenReadStream(_excelFilePath);
         var readData = Excel.ReadFromExcel<TestClass>(readStream, hasHeader: hasHeader).ToArray();
         data.Should().BeEquivalentTo(readData);
     }
