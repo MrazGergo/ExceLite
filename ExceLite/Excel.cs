@@ -41,11 +41,10 @@ namespace ExceLite
                 var properties = GetValidProperties<T>();
                 var propertiesByColumnReference = GetPropertyReferences(properties);
                 var currentRow = 1;
-                var cellSorter = new SortedList<string, Cell>(properties.Length, new ExcelColumnReferenceComparer());
 
                 if (addHeader)
                 {
-                    var headerRow = CreateRow(properties, item: null, isHeader: true, propertiesByColumnReference, currentRow, cellSorter);
+                    var headerRow = CreateRow(item: null, isHeader: true, propertiesByColumnReference, currentRow);
                     currentRow++;
                     sheetData.Append(headerRow);
                 }
@@ -53,7 +52,7 @@ namespace ExceLite
                 // Add data rows
                 foreach (var item in data)
                 {
-                    var dataRow = CreateRow(properties, item, isHeader: false, propertiesByColumnReference, currentRow, cellSorter);
+                    var dataRow = CreateRow(item, isHeader: false, propertiesByColumnReference, currentRow);
                     currentRow++;
                     sheetData.Append(dataRow);
                 }
@@ -65,44 +64,42 @@ namespace ExceLite
         /// <summary>
         /// Creates a Row object for the Excel sheet, either as a header row or a data row.
         /// </summary>
-        /// <param name="properties">The properties of the objects being written to the Excel sheet.</param>
         /// <param name="item">The data item to extract values from (null for header row).</param>
         /// <param name="isHeader">Indicates if the row is a header row.</param>
         /// <param name="propertiesByColumnReference">The mapping of properties to column references.</param>
         /// <param name="currentRow">The current row index.</param>
         /// <returns>A Row object ready to be appended to the Excel sheet.</returns>
-        private static Row CreateRow(PropertyInfo[] properties, object item, bool isHeader,
-            Dictionary<PropertyInfo, string> propertiesByColumnReference, int currentRow, SortedList<string, Cell> cellSorter)
+        private static Row CreateRow(object item, bool isHeader, SortedDictionary<string, PropertyInfo> propertiesByColumnReference, int currentRow)
         {
-            cellSorter.Clear();
+            var row = new Row();
 
-            foreach (var property in properties)
+            foreach (var propertyByReference in propertiesByColumnReference)
             {
+                var property = propertyByReference.Value;
+                var columnReference = propertyByReference.Key;
                 var value = isHeader
                     ? property.GetCustomAttribute<ExcelColumnAttribute>()?.ColumnName ?? property.Name
                     : property.GetValue(item);
 
-                var columnReference = propertiesByColumnReference[property];
                 var cell = CreateCell(value, columnReference, currentRow);
-
-                cellSorter.Add(columnReference, cell);
+                row.Append(cell);
             }
 
-            return new Row(cellSorter.Values);
+            return row;
         }
 
         private static string CreateReference(string columnReference, int row) => $"{columnReference}{row}";
 
-        private static Dictionary<PropertyInfo, string> GetPropertyReferences(PropertyInfo[] properties)
+        private static SortedDictionary<string, PropertyInfo> GetPropertyReferences(PropertyInfo[] properties)
         {
-            var result = new Dictionary<PropertyInfo, string>();
+            var result = new SortedDictionary<string, PropertyInfo>(new ExcelColumnReferenceComparer());
             //First, get the references where it is set.
             foreach (var property in properties)
             {
                 var columnReference = property.GetCustomAttribute<ExcelColumnAttribute>()?.ColumnReference;
                 if (!string.IsNullOrEmpty(columnReference))
                 {
-                    result.Add(property, columnReference);
+                    result.Add(columnReference, property);
                 }
             }
 
@@ -113,16 +110,16 @@ namespace ExceLite
 
             //Set a random one for the others
             var referenceGenerator = new ColumnReferenceGenerator();
-            foreach (var property in properties.Where(p => !result.ContainsKey(p)))
+            foreach (var property in properties.Where(p => !result.ContainsValue(p)))
             {
                 string reference;
                 do
                 {
                     reference = referenceGenerator.Next;
                 }
-                while(result.ContainsValue(reference));
+                while(result.ContainsKey(reference));
 
-                result.Add(property, reference);
+                result.Add(reference, property);
             }
 
             return result;
