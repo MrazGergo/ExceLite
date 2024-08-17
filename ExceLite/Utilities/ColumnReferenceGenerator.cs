@@ -1,4 +1,4 @@
-﻿namespace ExceLite
+﻿namespace ExceLite.Utilities
 {
     internal class ColumnReferenceGenerator
     {

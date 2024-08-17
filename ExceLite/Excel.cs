@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using ExceLite.Exceptions;
+using ExceLite.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -40,10 +41,11 @@ namespace ExceLite
                 var properties = GetValidProperties<T>();
                 var propertiesByColumnReference = GetPropertyReferences(properties);
                 var currentRow = 1;
+                var cellSorter = new SortedList<string, Cell>(properties.Length, new ExcelColumnReferenceComparer());
 
                 if (addHeader)
                 {
-                    var headerRow = CreateRow(properties, item: null, isHeader: true, propertiesByColumnReference, currentRow);
+                    var headerRow = CreateRow(properties, item: null, isHeader: true, propertiesByColumnReference, currentRow, cellSorter);
                     currentRow++;
                     sheetData.Append(headerRow);
                 }
@@ -51,7 +53,7 @@ namespace ExceLite
                 // Add data rows
                 foreach (var item in data)
                 {
-                    var dataRow = CreateRow(properties, item, isHeader: false, propertiesByColumnReference, currentRow);
+                    var dataRow = CreateRow(properties, item, isHeader: false, propertiesByColumnReference, currentRow, cellSorter);
                     currentRow++;
                     sheetData.Append(dataRow);
                 }
@@ -70,9 +72,9 @@ namespace ExceLite
         /// <param name="currentRow">The current row index.</param>
         /// <returns>A Row object ready to be appended to the Excel sheet.</returns>
         private static Row CreateRow(PropertyInfo[] properties, object item, bool isHeader,
-            Dictionary<PropertyInfo, string> propertiesByColumnReference, int currentRow)
+            Dictionary<PropertyInfo, string> propertiesByColumnReference, int currentRow, SortedList<string, Cell> cellSorter)
         {
-            var row = new Row();
+            cellSorter.Clear();
 
             foreach (var property in properties)
             {
@@ -83,10 +85,10 @@ namespace ExceLite
                 var columnReference = propertiesByColumnReference[property];
                 var cell = CreateCell(value, columnReference, currentRow);
 
-                row.Append(cell);
+                cellSorter.Add(columnReference, cell);
             }
 
-            return row;
+            return new Row(cellSorter.Values);
         }
 
         private static string CreateReference(string columnReference, int row) => $"{columnReference}{row}";
