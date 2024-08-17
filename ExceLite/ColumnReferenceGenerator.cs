@@ -2,14 +2,14 @@
 {
     internal class ColumnReferenceGenerator
     {
-        private int _columnIndex = -1;
+        private int _columnIndex = 0;
 
         /// <summary>
         /// Resets the next column reference to A.
         /// </summary>
         public void Reset()
         {
-            _columnIndex = -1;
+            _columnIndex = 0;
         }
 
         /// <summary>
