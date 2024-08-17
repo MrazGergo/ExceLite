@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace ExceLite.Unit.Tests.ExcelFiles;
+﻿namespace ExceLite.Unit.Tests.ExcelFiles;
 internal static class FilePaths
 {
     public static string EmptyExcel => GetRelativeTestFilePath("Empty.xlsx");
@@ -31,8 +29,7 @@ internal static class FilePaths
         get
         {
             const string subFolderName = "ExceLite";
-            var randomName = Regex.Replace(Path.GetRandomFileName(), ".[a-z]+$", ".xlsx");
-
+            var randomName = Path.ChangeExtension(Path.GetRandomFileName(), ".xlsx");
             return Path.Combine(Path.GetTempPath(), subFolderName, randomName);
         }
     }
