@@ -65,7 +65,7 @@ public class ExcelWriteTests : IDisposable
         //Assert
         using var readStream = FilePaths.OpenReadStream(_excelFilePath);
         var readData = Excel.ReadFromExcel<TestClass>(readStream, hasHeader: hasHeader).ToArray();
-        data.Should().BeEquivalentTo(readData);
+        readData.Should().BeEquivalentTo(data);
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class ExcelWriteTests : IDisposable
         //Assert
         using var readStream = FilePaths.OpenReadStream(_excelFilePath);
         var readData = Excel.ReadFromExcel<CustomHeaderTestClass>(readStream, hasHeader: hasHeader).ToArray();
-        data.Should().BeEquivalentTo(readData);
+        readData.Should().BeEquivalentTo(data);
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class ExcelWriteTests : IDisposable
         //Assert
         using var readStream = FilePaths.OpenReadStream(_excelFilePath);
         var readData = Excel.ReadFromExcel<CustomReferenceFullTestClass>(readStream, hasHeader: hasHeader).ToArray();
-        data.Should().BeEquivalentTo(readData);
+        readData.Should().BeEquivalentTo(data);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class ExcelWriteTests : IDisposable
         //Assert
         using var readStream = FilePaths.OpenReadStream(_excelFilePath);
         var readData = Excel.ReadFromExcel<CustomReferencePartialTestClass>(readStream, hasHeader: hasHeader).ToArray();
-        data.Should().BeEquivalentTo(readData);
+        readData.Should().BeEquivalentTo(data);
     }
 
     [Fact]
